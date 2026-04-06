@@ -11,6 +11,7 @@ import sys
 import argparse
 import os
 from pathlib import Path
+import subprocess
 
 try:
     import websockets
@@ -29,6 +30,11 @@ WS_PORT    = args.port + 1
 INTERVAL   = max(1000, args.interval)
 SCRIPT_DIR = Path(__file__).parent
 INDEX_HTML = SCRIPT_DIR / "index.html"
+
+try:
+    E_CORES_COUNT = int(subprocess.check_output(["sysctl", "-n", "hw.perflevel1.physicalcpu"]).strip())
+except Exception:
+    E_CORES_COUNT = 4  # Standard fallback
 
 connected_clients: set = set()
 latest_sample: dict    = {}
@@ -66,21 +72,16 @@ def parse_block(text: str) -> dict:
     d["p_cluster_freq"]   = fi(r"P-Cluster HW active frequency:\s*(\d+)\s*MHz")
 
     cores = []
-    current_type = "E"
-    for line in text.split("\n"):
-        if "E-Cluster" in line:
-            current_type = "E"
-        elif "-Cluster" in line and "P" in line:
-            current_type = "P"
-            
-        m1 = re.search(r"CPU (\d+) frequency:\s*(\d+) MHz", line)
-        if m1:
-            cores.append({"id": int(m1.group(1)), "freq": int(m1.group(2)), "active": 0.0, "type": current_type})
-            
-        m2 = re.search(r"CPU (\d+) active residency:\s*([\d.]+)%", line)
-        if m2 and cores and cores[-1]["id"] == int(m2.group(1)):
-            cores[-1]["active"] = float(m2.group(2))
-            
+    for m in re.finditer(
+        r"CPU (\d+) frequency:\s*(\d+) MHz\s+CPU \d+ active residency:\s*([\d.]+)%", text
+    ):
+        cid = int(m.group(1))
+        cores.append({
+            "id":     cid,
+            "freq":   int(m.group(2)),
+            "active": float(m.group(3)),
+            "type":   "E" if cid < E_CORES_COUNT else "P"
+        })
     d["cores"] = cores
 
     d["gpu_freq"]   = fi(r"GPU HW active frequency:\s*(\d+)\s*MHz")
