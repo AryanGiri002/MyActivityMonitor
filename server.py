@@ -186,6 +186,8 @@ async def run_powermetrics_once():
         async for line in proc.stderr:
             msg = line.decode("utf-8", errors="replace").rstrip()
             if msg:
+                if "proc_pidpath" in msg or "Second underflow" in msg:
+                    continue
                 print(f"[powermetrics] {msg}")
 
     stderr_task = asyncio.create_task(drain_stderr())
