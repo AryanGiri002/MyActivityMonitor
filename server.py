@@ -251,10 +251,10 @@ async def main():
 
     # FIX: start HTTP + WS servers first, then launch powermetrics as a background
     # task so the servers stay up even if powermetrics fails or restarts.
-    http_server = await asyncio.start_server(handle_http, "0.0.0.0", HTTP_PORT)
+    http_server = await asyncio.start_server(handle_http, "127.0.0.1", HTTP_PORT)
     async with http_server:
         print(f"[powermon] dashboard  →  http://localhost:{HTTP_PORT}")
-        async with websockets.serve(ws_handler, "0.0.0.0", WS_PORT):
+        async with websockets.serve(ws_handler, "127.0.0.1", WS_PORT):
             print(f"[powermon] websocket  →  ws://localhost:{WS_PORT}")
             # run as a task so an exception here doesn't tear down the servers
             pm_task = asyncio.create_task(run_powermetrics())
