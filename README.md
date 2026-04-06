@@ -2,6 +2,15 @@
 
 Live Apple Silicon system monitor — streams `powermetrics` to a browser dashboard over WebSocket.
 
+<img width="1512" height="855" alt="image" src="https://github.com/user-attachments/assets/253c8c24-9de1-42af-af35-63e8261ea780" />
+<br>
+<img width="1509" height="857" alt="image" src="https://github.com/user-attachments/assets/c0c4c760-472c-4963-9421-4c2df8f1356b" />
+<br>
+<img width="1512" height="857" alt="image" src="https://github.com/user-attachments/assets/982815c2-7f8e-45ca-bf9c-fbe18dec2c52" />
+<br>
+<img width="1512" height="855" alt="image" src="https://github.com/user-attachments/assets/c380e34f-6205-4304-8ea4-351429d76bc1" />
+
+
 ## Quick Install (macOS Only)
 
 ```bash
