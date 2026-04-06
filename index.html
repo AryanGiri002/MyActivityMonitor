@@ -702,7 +702,7 @@ function connect() {
 // ── init ──────────────────────────────────────────────────────────────────────
 
 // ── init ──────────────────────────────────────────────────────────────────────
-if (localStorage.getItem('powermon-theme') === 'light' || (!localStorage.getItem('powermon-theme') && matchMedia('(prefers-color-scheme: light)').matches)) {
+if (localStorage.getItem('powermon-theme') === 'light') {
   document.documentElement.classList.add('light');
 }
 function updateThemeIcon() {
