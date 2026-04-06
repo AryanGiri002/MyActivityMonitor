@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>powermon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg0: #0a0a0c;
+  --bg1: #111114;
+  --bg2: #18181d;
+  --bg3: #202026;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.13);
+  --text: #e8e8f0;
+  --muted: rgba(232,232,240,0.45);
+  --dim: rgba(232,232,240,0.2);
+  --accent-blue: #4cc9f0;
+  --accent-pink: #f72585;
+  --accent-green: #70e000;
+  --accent-amber: #ffb703;
+  --accent-teal: #00b4d8;
+  --accent-purple: #7209b7;
+  --accent-red: #f87171;
+  --mono: 'JetBrains Mono', monospace;
+  --display: 'Syne', sans-serif;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+html.light {
+  --bg0: #f8fafc;
+  --bg1: #ffffff;
+  --bg2: #f1f5f9;
+  --bg3: #e2e8f0;
+  --border: rgba(0,0,0,0.08);
+  --border2: rgba(0,0,0,0.12);
+  --text: #0f172a;
+  --muted: #64748b;
+  --dim: #94a3b8;
+  --accent-blue: #4361ee;
+  --accent-pink: #e63946;
+  --accent-green: #008000;
+  --accent-amber: #fb8500;
+  --accent-teal: #0077b6;
+  --accent-purple: #7209b7;
+  --accent-red: #dc2626;
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg0); color: var(--text); font-family: var(--mono); height: 100%; overflow-x: hidden; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* ── layout ── */
+.shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: 56px 1fr;
+  grid-template-columns: 1fr;
+}
+
+/* ── topbar ── */
+.topbar {
+  background: var(--bg1);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 20px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.logo {
+  font-family: var(--display);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+.logo span { color: var(--accent-blue); }
+.status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--accent-red);
+  transition: background 0.4s;
+  flex-shrink: 0;
+}
+.status-dot.live { background: var(--accent-green); box-shadow: 0 0 8px var(--accent-green); }
+.status-label { font-size: 11px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+.topbar-right { margin-left: auto; display: flex; align-items: center; gap: 16px; }
+.machine-tag {
+  font-size: 11px; color: var(--muted);
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  border-radius: 4px;
+  letter-spacing: 0.04em;
+}
+.interval-badge {
+  font-size: 11px; color: var(--accent-teal);
+  letter-spacing: 0.04em;
+}
+
+/* ── main content ── */
+.content { padding: 20px 24px 40px; overflow-y: auto; }
+
+/* ── stat cards ── */
+.stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
+@media (max-width: 900px) { .stat-row { grid-template-columns: repeat(2,1fr); } }
+.stat-card {
+  background: var(--bg1);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  padding: 14px 16px;
+  position: relative;
+  overflow: hidden;
+}
+.stat-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.stat-card:hover::before { opacity: 1; }
+.stat-card.blue::before  { box-shadow: inset 0 0 0 1px rgba(74,158,255,0.3); }
+.stat-card.pink::before  { box-shadow: inset 0 0 0 1px rgba(255,107,157,0.3); }
+.stat-card.green::before { box-shadow: inset 0 0 0 1px rgba(74,222,128,0.3); }
+.stat-card.amber::before { box-shadow: inset 0 0 0 1px rgba(251,191,36,0.3); }
+.stat-card.teal::before  { box-shadow: inset 0 0 0 1px rgba(45,212,191,0.3); }
+.stat-card.purple::before{ box-shadow: inset 0 0 0 1px rgba(167,139,250,0.3); }
+
+.stat-label { font-size: 10px; letter-spacing: 0.08em; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
+.stat-value { font-family: var(--display); font-size: 26px; font-weight: 700; line-height: 1; }
+.stat-value.blue   { color: var(--accent-blue); }
+.stat-value.pink   { color: var(--accent-pink); }
+.stat-value.green  { color: var(--accent-green); }
+.stat-value.amber  { color: var(--accent-amber); }
+.stat-value.teal   { color: var(--accent-teal); }
+.stat-value.purple { color: var(--accent-purple); }
+.stat-sub { font-size: 11px; color: var(--dim); margin-top: 4px; }
+
+/* ── tabs ── */
+.tabs-bar {
+  display: flex; gap: 2px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 18px;
+}
+.tab-btn {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  padding: 8px 18px;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
+  position: relative;
+  bottom: -1px;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--accent-blue); border-bottom-color: var(--accent-blue); }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── chart panels ── */
+.chart-card {
+  background: var(--bg1);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+.chart-card-title {
+  font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 12px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.chart-legend { display: flex; gap: 14px; }
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+canvas { display: block; }
+
+/* ── core grid ── */
+.core-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 8px; }
+@media (max-width: 700px) { .core-grid { grid-template-columns: repeat(2,1fr); } }
+.core-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+.core-label { font-size: 10px; color: var(--muted); letter-spacing: 0.06em; margin-bottom: 6px; }
+.core-bar-wrap { height: 4px; background: var(--bg3); border-radius: 2px; margin-bottom: 6px; overflow: hidden; }
+.core-bar { height: 4px; border-radius: 2px; transition: width 0.4s ease; }
+.core-val { font-size: 18px; font-weight: 700; font-family: var(--display); }
+.core-freq { font-size: 10px; color: var(--dim); margin-top: 2px; }
+
+/* ── process table ── */
+.proc-header {
+  display: flex; gap: 10px; align-items: center; margin-bottom: 10px; flex-wrap: wrap;
+}
+.proc-search {
+  flex: 1; min-width: 180px;
+  background: var(--bg1);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12px;
+  padding: 8px 12px;
+  outline: none;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.proc-search:focus, .proc-search:hover { 
+  border-color: var(--accent-blue); 
+  box-shadow: 0 0 0 1px var(--accent-blue); 
+}
+.proc-search::placeholder { color: var(--dim); }
+
+.sort-select {
+  appearance: none;
+  background-color: var(--bg1);
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12px;
+  padding: 8px 32px 8px 12px;
+  outline: none;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.sort-select:focus, .sort-select:hover {
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 1px var(--accent-blue);
+}
+
+.proc-table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+thead th {
+  font-size: 10px; letter-spacing: 0.07em; text-transform: uppercase;
+  color: var(--dim); font-weight: 400;
+  padding: 6px 10px; text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+thead th:hover { color: var(--muted); }
+thead th.active-sort { color: var(--accent-blue); }
+tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--bg2); }
+tbody td { padding: 7px 10px; font-size: 12px; white-space: nowrap; max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+.cpu-bar-cell { width: 100px; }
+.mini-bar { height: 3px; border-radius: 2px; background: var(--bg3); }
+.mini-bar-fill { height: 3px; border-radius: 2px; transition: width 0.4s; }
+
+/* ── io row ── */
+.io-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 700px) { .io-grid { grid-template-columns: 1fr; } }
+
+/* ── connlost ── */
+.conn-lost {
+  position: fixed; bottom: 20px; right: 20px;
+  background: var(--bg2); border: 1px solid var(--accent-red);
+  color: var(--accent-red); font-size: 12px;
+  padding: 10px 16px; border-radius: 6px;
+  display: none; z-index: 999;
+}
+
+/* ── sparkline header stats ── */
+.mini-stats { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 14px; }
+.mini-stat { font-size: 11px; }
+.mini-stat-label { color: var(--dim); }
+.mini-stat-val { color: var(--text); font-weight: 500; }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <header class="topbar">
+    <div class="logo">power<span>mon</span></div>
+    <div class="status-dot" id="statusDot"></div>
+    <div class="status-label" id="statusLabel">connecting…</div>
+    
+    <div class="topbar-right">
+      <button id="themeToggle" onclick="toggleTheme()" style="background:transparent;border:1px solid var(--border);color:var(--muted);width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:color 0.2s;">
+        <svg id="moonIcon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        <svg id="sunIcon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+      </button>
+      <div class="machine-tag" id="machineTag">—</div>
+      <div class="interval-badge" id="intervalTag">—</div>
+    </div>
+  </header>
+
+  <main class="content">
+
+    <!-- stat cards -->
+    <div class="stat-row">
+      <div class="stat-card blue">
+        <div class="stat-label">CPU power</div>
+        <div class="stat-value blue" id="sCpuPow">—</div>
+        <div class="stat-sub" id="sCpuSub">—</div>
+      </div>
+      <div class="stat-card pink">
+        <div class="stat-label">GPU power</div>
+        <div class="stat-value pink" id="sGpuPow">—</div>
+        <div class="stat-sub" id="sGpuSub">active: —</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">combined</div>
+        <div class="stat-value green" id="sCombined">—</div>
+        <div class="stat-sub" id="sThermal">—</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-label">battery</div>
+        <div class="stat-value amber" id="sBattery">—</div>
+        <div class="stat-sub" id="sAne">ANE: —</div>
+      </div>
+    </div>
+
+    <!-- tabs -->
+    <div class="tabs-bar">
+      <button class="tab-btn active" onclick="setTab('power')">Power</button>
+      <button class="tab-btn" onclick="setTab('cpu')">CPU</button>
+      <button class="tab-btn" onclick="setTab('gpu')">GPU</button>
+      <button class="tab-btn" onclick="setTab('io')">Network / Disk</button>
+      <button class="tab-btn" onclick="setTab('procs')">Processes</button>
+    </div>
+
+    <!-- power tab -->
+    <div class="tab-panel active" id="panel-power">
+      <div class="chart-card">
+        <div class="chart-card-title">
+          power draw over time
+          <div class="chart-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:var(--accent-blue)"></div>CPU</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--accent-pink)"></div>GPU</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--accent-amber)"></div>ANE</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--accent-green)"></div>Combined</div>
+          </div>
+        </div>
+        <div style="position: relative; height: 200px; width: 100%;">
+          <canvas id="powerChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- cpu tab -->
+    <div class="tab-panel" id="panel-cpu">
+      <div class="chart-card" style="margin-bottom:14px;">
+        <div class="chart-card-title">
+          cluster active residency %
+          <div class="chart-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:var(--accent-blue)"></div>E-cluster</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--accent-pink)"></div>P-cluster</div>
+          </div>
+        </div>
+        <div style="position: relative; height: 160px; width: 100%;">
+          <canvas id="clusterChart"></canvas>
+        </div>
+      </div>
+      <div class="core-grid" id="coreGrid"></div>
+    </div>
+
+    <!-- gpu tab -->
+    <div class="tab-panel" id="panel-gpu">
+      <div class="chart-card">
+        <div class="chart-card-title">
+          GPU active residency % + frequency
+          <div class="chart-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:var(--accent-pink)"></div>active %</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--accent-teal)"></div>freq (MHz)</div>
+          </div>
+        </div>
+        <div style="position: relative; height: 200px; width: 100%;">
+          <canvas id="gpuChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- io tab -->
+    <div class="tab-panel" id="panel-io">
+      <div class="io-grid">
+        <div class="chart-card">
+          <div class="chart-card-title">
+            network packets/s
+            <div class="chart-legend">
+              <div class="legend-item"><div class="legend-dot" style="background:var(--accent-blue)"></div>out</div>
+              <div class="legend-item"><div class="legend-dot" style="background:var(--accent-teal)"></div>in</div>
+            </div>
+          </div>
+          <div style="position: relative; height: 180px; width: 100%;">
+            <canvas id="netChart"></canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-title">
+            disk ops/s
+            <div class="chart-legend">
+              <div class="legend-item"><div class="legend-dot" style="background:var(--accent-amber)"></div>read</div>
+              <div class="legend-item"><div class="legend-dot" style="background:var(--accent-pink)"></div>write</div>
+            </div>
+          </div>
+          <div style="position: relative; height: 180px; width: 100%;">
+            <canvas id="diskChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- procs tab -->
+    <div class="tab-panel" id="panel-procs">
+      <div class="proc-header">
+        <input class="proc-search" id="procSearch" type="text" placeholder="filter processes..." oninput="renderProcs()">
+        <select class="sort-select" id="sortKey" onchange="renderProcs()">
+          <option value="cpu">sort: CPU ms/s</option>
+          <option value="user">sort: User %</option>
+          <option value="name">sort: Name</option>
+        </select>
+      </div>
+      <div class="chart-card" style="padding:0; overflow:hidden;">
+        <div class="proc-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th onclick="cycleSort('name')" id="th-name">process</th>
+                <th onclick="cycleSort('cpu')" id="th-cpu" class="active-sort">cpu ms/s ↓</th>
+                <th onclick="cycleSort('user')" id="th-user">user %</th>
+                <th style="width:120px">load</th>
+              </tr>
+            </thead>
+            <tbody id="procBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="conn-lost" id="connLost">⚠ connection lost — retrying…</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const WS_URL = `ws://localhost:${location.port ? Number(location.port)+1 : 7071}`;
+const MAX_POINTS = 60;
+
+// ── ring buffer ───────────────────────────────────────────────────────────────
+const ring = { labels:[], cpu:[], gpu:[], ane:[], combined:[], eCluster:[], pCluster:[], gpuActive:[], gpuFreq:[], netOut:[], netIn:[], diskRead:[], diskWrite:[] };
+function push(key, val) { ring[key].push(val); if (ring[key].length > MAX_POINTS) ring[key].shift(); }
+let latestProcs = [];
+let sortField = 'cpu', sortAsc = false;
+
+// ── chart factory ─────────────────────────────────────────────────────────────
+function getVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+function hexToRgb(h) {
+  let r=0,g=0,b=0;
+  if(h.startsWith('#')){
+    let x = h.length===4 ? h.split('').map(x=>x+x).join('').slice(1) : h.slice(1);
+    r=parseInt(x.slice(0,2),16); g=parseInt(x.slice(2,4),16); b=parseInt(x.slice(4,6),16);
+  }
+  return {r,g,b};
+}
+function ds(ctx, label, data, colorVar, opts={}) {
+  const color = getVar(colorVar) || colorVar;
+  const rgb = hexToRgb(color);
+  const grad = ctx.createLinearGradient(0,0,0,300);
+  grad.addColorStop(0, `rgba(${rgb.r},${rgb.g},${rgb.b},0.3)`);
+  grad.addColorStop(1, `rgba(${rgb.r},${rgb.g},${rgb.b},0.01)`);
+  return {
+    label, data, borderColor: color,
+    backgroundColor: opts.fill ? grad : 'transparent',
+    borderWidth: 2, pointRadius: 0, pointHoverRadius: 4,
+    pointHoverBackgroundColor: color, pointHoverBorderColor: getVar('--bg1'), pointHoverBorderWidth: 2,
+    tension: 0.45, fill: opts.fill ?? false, yAxisID: opts.yAxisID ?? 'y', ...opts
+  };
+}
+
+function makeChart(id, getDatasets, yOpts={}) {
+  const ctx = document.getElementById(id).getContext('2d');
+  return new Chart(ctx, {
+    type: 'line',
+    data: { labels: ring.labels, datasets: getDatasets(ctx) },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 200 },
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: getVar('--bg2'),
+          borderColor: 'rgba(255,255,255,0.1)',
+          borderWidth: 1,
+          titleColor: getVar('--text'),
+          bodyColor: getVar('--muted'),
+          padding: 10,
+          callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}` }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: getVar('--dim'), font: { family: "'JetBrains Mono'", size: 10 }, maxRotation: 0, maxTicksLimit: 8 },
+          grid: { display: false, drawBorder: false },
+          border: { display: false }
+        },
+        y: {
+          ticks: { color: getVar('--dim'), font: { family: "'JetBrains Mono'", size: 10 } },
+          grid: { display: false, drawBorder: false },
+          border: { display: false },
+          ...yOpts
+        },
+        ...(yOpts.y2 ? { y2: { ...yOpts.y2, position: 'right', ticks: { color: 'rgba(45,212,191,0.5)', font: { size: 10 } }, grid: { display: false }, border: { display: false } } } : {})
+      }
+    }
+  });
+}
+
+
+const charts = {};
+
+function initCharts() {
+  charts.power = makeChart('powerChart', ctx => [
+    ds(ctx, 'CPU mW',      ring.cpu,      '--accent-blue', { fill: true }),
+    ds(ctx, 'GPU mW',      ring.gpu,      '--accent-pink', { fill: true }),
+    ds(ctx, 'ANE mW',      ring.ane,      '--accent-purple'),
+    ds(ctx, 'Combined mW', ring.combined, '--accent-green', { borderDash: [4,3] }),
+  ], { suggestedMin: 0 });
+
+  charts.cluster = makeChart('clusterChart', ctx => [
+    ds(ctx, 'E-cluster %', ring.eCluster, '--accent-blue', { fill: true }),
+    ds(ctx, 'P-cluster %', ring.pCluster, '--accent-pink', { fill: true }),
+  ], { min: 0, max: 100 });
+
+  charts.gpu = makeChart('gpuChart', ctx => [
+    ds(ctx, 'active %', ring.gpuActive, '--accent-pink', { fill: true }),
+    ds(ctx, 'freq MHz',  ring.gpuFreq,  '--accent-teal', { yAxisID: 'y2' }),
+  ], { min: 0, max: 100, y2: { suggestedMin: 200, suggestedMax: 1600 } });
+
+  charts.net = makeChart('netChart', ctx => [
+    ds(ctx, 'out pkt/s', ring.netOut, '--accent-blue', { fill: true }),
+    ds(ctx, 'in pkt/s',  ring.netIn,  '--accent-teal', { fill: true }),
+  ], { suggestedMin: 0 });
+
+  charts.disk = makeChart('diskChart', ctx => [
+    ds(ctx, 'read ops/s',  ring.diskRead,  '--accent-amber', { fill: true }),
+    ds(ctx, 'write ops/s', ring.diskWrite, '--accent-pink', { fill: true }),
+  ], { suggestedMin: 0 });
+}
+
+function updateCharts() {
+  Object.values(charts).forEach(c => c.update('none'));
+}
+
+// ── data ingestion ────────────────────────────────────────────────────────────
+function ingest(d) {
+  // timestamp label — just HH:MM:SS
+  const now = new Date();
+  const lbl = now.toTimeString().slice(0,8);
+  push('labels', lbl);
+  push('cpu',      d.cpu_power);
+  push('gpu',      d.gpu_power);
+  push('ane',      d.ane_power);
+  push('combined', d.combined_power);
+  push('eCluster', d.e_cluster_active);
+  push('pCluster', d.p_cluster_active);
+  push('gpuActive',d.gpu_active);
+  push('gpuFreq',  d.gpu_freq);
+  push('netOut',   d.net_out_pkts);
+  push('netIn',    d.net_in_pkts);
+  push('diskRead', d.disk_read_ops);
+  push('diskWrite',d.disk_write_ops);
+
+  // stat cards
+  document.getElementById('sCpuPow').textContent   = d.cpu_power + ' mW';
+  document.getElementById('sCpuSub').textContent   = `E-cluster: ${d.e_cluster_active.toFixed(1)}% @ ${d.e_cluster_freq} MHz`;
+  document.getElementById('sGpuPow').textContent   = d.gpu_power + ' mW';
+  document.getElementById('sGpuSub').textContent   = `active: ${d.gpu_active.toFixed(1)}% @ ${d.gpu_freq} MHz`;
+  document.getElementById('sCombined').textContent = d.combined_power + ' mW';
+  document.getElementById('sThermal').textContent  = 'thermal: ' + d.thermal;
+  document.getElementById('sBattery').textContent  = (d.battery !== null ? d.battery + '%' : '—');
+  document.getElementById('sAne').textContent      = `ANE: ${d.ane_power} mW`;
+
+  // core grid
+  const grid = document.getElementById('coreGrid');
+  if (d.cores && d.cores.length) {
+    grid.innerHTML = d.cores.map(c => {
+      const isPcore = c.id >= 6;
+      const color = isPcore ? '#ff6b9d' : '#4a9eff';
+      const label = isPcore ? `P${c.id-6}` : `E${c.id}`;
+      return `<div class="core-card">
+        <div class="core-label">${label} ${isPcore ? '(perf)' : '(eff)'}</div>
+        <div class="core-bar-wrap"><div class="core-bar" style="width:${c.active.toFixed(1)}%;background:${color}"></div></div>
+        <div class="core-val" style="color:${color}">${c.active.toFixed(0)}<span style="font-size:14px;opacity:0.5">%</span></div>
+        <div class="core-freq">${c.freq} MHz</div>
+      </div>`;
+    }).join('');
+  }
+
+  // processes
+  latestProcs = d.processes || [];
+  renderProcs();
+
+  updateCharts();
+}
+
+// ── process table ─────────────────────────────────────────────────────────────
+function cycleSort(field) {
+  if (sortField === field) sortAsc = !sortAsc;
+  else { sortField = field; sortAsc = false; }
+  document.getElementById('sortKey').value = field;
+  ['name','cpu','user'].forEach(f => {
+    const el = document.getElementById('th-'+f);
+    if (!el) return;
+    el.classList.toggle('active-sort', f === field);
+    el.textContent = f.charAt(0).toUpperCase()+f.slice(1) + (f === 'cpu' ? ' ms/s' : f === 'user' ? ' %' : '') + (f === sortField ? (sortAsc ? ' ↑' : ' ↓') : '');
+  });
+  renderProcs();
+}
+
+function renderProcs() {
+  const q = (document.getElementById('procSearch').value || '').toLowerCase();
+  let data = latestProcs.filter(p => p.name.toLowerCase().includes(q));
+  const sf = document.getElementById('sortKey').value || sortField;
+  data.sort((a,b) => {
+    let av=a[sf], bv=b[sf];
+    if (typeof av === 'string') return sortAsc ? av.localeCompare(bv) : bv.localeCompare(av);
+    return sortAsc ? av-bv : bv-av;
+  });
+  const maxCpu = Math.max(...data.map(p=>p.cpu), 1);
+  document.getElementById('procBody').innerHTML = data.map(p => {
+    const pct = Math.min(100, (p.cpu/maxCpu*100)).toFixed(0);
+    const col  = p.cpu > 100 ? '#ff6b9d' : p.cpu > 30 ? '#4a9eff' : '#4ade80';
+    return `<tr>
+      <td title="${p.name}" style="color:var(--text)">${p.name}</td>
+      <td style="color:var(--muted)">${p.cpu.toFixed(1)}</td>
+      <td style="color:var(--dim)">${p.user.toFixed(0)}%</td>
+      <td class="cpu-bar-cell"><div class="mini-bar"><div class="mini-bar-fill" style="width:${pct}%;background:${col}"></div></div></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── tab switching ─────────────────────────────────────────────────────────────
+function setTab(t) {
+  document.querySelectorAll('.tab-panel').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('panel-'+t).classList.add('active');
+  event.currentTarget.classList.add('active');
+  // resize charts after tab switch
+  setTimeout(()=>{ Object.values(charts).forEach(c=>c.resize()); }, 50);
+}
+
+// ── WebSocket ─────────────────────────────────────────────────────────────────
+let ws, retryTimer;
+
+function connect() {
+  ws = new WebSocket(WS_URL);
+  ws.onopen = () => {
+    document.getElementById('statusDot').classList.add('live');
+    document.getElementById('statusLabel').textContent = 'live';
+    document.getElementById('connLost').style.display = 'none';
+    clearTimeout(retryTimer);
+  };
+  ws.onmessage = e => {
+    try {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'sample') ingest(msg.data);
+    } catch(_) {}
+  };
+  ws.onclose = () => {
+    document.getElementById('statusDot').classList.remove('live');
+    document.getElementById('statusLabel').textContent = 'disconnected';
+    document.getElementById('connLost').style.display = 'block';
+    retryTimer = setTimeout(connect, 3000);
+  };
+  ws.onerror = () => ws.close();
+}
+
+// ── init ──────────────────────────────────────────────────────────────────────
+
+// ── init ──────────────────────────────────────────────────────────────────────
+if (localStorage.getItem('powermon-theme') === 'light' || (!localStorage.getItem('powermon-theme') && matchMedia('(prefers-color-scheme: light)').matches)) {
+  document.documentElement.classList.add('light');
+}
+function updateThemeIcon() {
+  const isLight = document.documentElement.classList.contains('light');
+  document.getElementById('sunIcon').style.display = isLight ? 'none' : 'block';
+  document.getElementById('moonIcon').style.display = isLight ? 'block' : 'none';
+}
+function toggleTheme() {
+  document.documentElement.classList.toggle('light');
+  localStorage.setItem('powermon-theme', document.documentElement.classList.contains('light') ? 'light' : 'dark');
+  updateThemeIcon();
+  Object.values(charts).forEach(c => c.destroy());
+  initCharts();
+  updateCharts();
+}
+updateThemeIcon();
+initCharts();
+connect();
+
+document.getElementById('machineTag').textContent = navigator.platform || '—';
+document.getElementById('intervalTag').textContent = `${WS_URL.split(':')[2]} ws`;
+</script>
+</body>
+</html>
