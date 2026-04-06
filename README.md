@@ -10,11 +10,18 @@ Live Apple Silicon system monitor — streams `powermetrics` to a browser dashbo
 
 ## run
 
+Start the dashboard from anywhere:
 ```bash
 activity
 ```
-
 This command will automatically request sudo, launch the websockets server, and auto-open `http://localhost:7070` inside your default browser!
+
+### management
+
+```bash
+activity --upgrade    # Pulls the latest code from GitHub and updates your dashboard
+activity --uninstall  # Safely removes the global 'activity' alias from your system
+```
 
 ## options
 
