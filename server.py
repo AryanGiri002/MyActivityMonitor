@@ -66,14 +66,21 @@ def parse_block(text: str) -> dict:
     d["p_cluster_freq"]   = fi(r"P-Cluster HW active frequency:\s*(\d+)\s*MHz")
 
     cores = []
-    for m in re.finditer(
-        r"CPU (\d+) frequency:\s*(\d+) MHz\s+CPU \d+ active residency:\s*([\d.]+)%", text
-    ):
-        cores.append({
-            "id":     int(m.group(1)),
-            "freq":   int(m.group(2)),
-            "active": float(m.group(3))
-        })
+    current_type = "E"
+    for line in text.split("\n"):
+        if "E-Cluster" in line:
+            current_type = "E"
+        elif "-Cluster" in line and "P" in line:
+            current_type = "P"
+            
+        m1 = re.search(r"CPU (\d+) frequency:\s*(\d+) MHz", line)
+        if m1:
+            cores.append({"id": int(m1.group(1)), "freq": int(m1.group(2)), "active": 0.0, "type": current_type})
+            
+        m2 = re.search(r"CPU (\d+) active residency:\s*([\d.]+)%", line)
+        if m2 and cores and cores[-1]["id"] == int(m2.group(1)):
+            cores[-1]["active"] = float(m2.group(2))
+            
     d["cores"] = cores
 
     d["gpu_freq"]   = fi(r"GPU HW active frequency:\s*(\d+)\s*MHz")

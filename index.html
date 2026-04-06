@@ -608,11 +608,11 @@ function ingest(d) {
   const grid = document.getElementById('coreGrid');
   if (d.cores && d.cores.length) {
     grid.innerHTML = d.cores.map(c => {
-      const isPcore = c.id >= 6;
-      const color = isPcore ? '#ff6b9d' : '#4a9eff';
-      const label = isPcore ? `P${c.id-6}` : `E${c.id}`;
+      const isPcore = c.type === 'P';
+      const color = isPcore ? 'var(--accent-pink)' : 'var(--accent-blue)';
+      const label = isPcore ? `P-Core ${c.id}` : `E-Core ${c.id}`;
       return `<div class="core-card">
-        <div class="core-label">${label} ${isPcore ? '(perf)' : '(eff)'}</div>
+        <div class="core-label">${label}</div>
         <div class="core-bar-wrap"><div class="core-bar" style="width:${c.active.toFixed(1)}%;background:${color}"></div></div>
         <div class="core-val" style="color:${color}">${c.active.toFixed(0)}<span style="font-size:14px;opacity:0.5">%</span></div>
         <div class="core-freq">${c.freq} MHz</div>
